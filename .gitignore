@@ -1,0 +1,24 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement (SECRETS!)
+.env
+.env.local
+.env.production
+
+# Build
+frontend/dist/
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
