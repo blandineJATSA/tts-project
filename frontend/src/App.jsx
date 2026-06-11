@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ProtectedLayout from '@/components/layout/ProtectedLayout'
 
 // Pages publiques temporaires
-const LandingPage   = () => <div>Landing Page - Coming soon</div>
+import LandingPage from '@/pages/LandingPage'
 const LoginPage     = () => <div>Login Page - Coming soon</div>
 const RegisterPage  = () => <div>Register Page - Coming soon</div>
 
