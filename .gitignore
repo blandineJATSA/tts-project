@@ -41,3 +41,5 @@ backend/uploads/
 # Cache
 .cache/
 *.tmp
+
+backend/temp_audio/
