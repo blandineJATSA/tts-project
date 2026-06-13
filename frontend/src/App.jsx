@@ -3,11 +3,11 @@ import ProtectedLayout from '@/components/layout/ProtectedLayout'
 
 // Pages publiques temporaires
 import LandingPage from '@/pages/LandingPage'
-const LoginPage     = () => <div>Login Page - Coming soon</div>
-const RegisterPage  = () => <div>Register Page - Coming soon</div>
+import LoginPage from '@/pages/LoginPage'
+import RegisterPage from '@/pages/RegisterPage'
 
 // Pages privées temporaires
-const GeneratorPage = () => <div>Generator Page - Coming soon</div>
+import GeneratorPage from '@/pages/app/GeneratorPage'
 const HistoryPage   = () => <div>History Page - Coming soon</div>
 const VoicesPage    = () => <div>Voices Page - Coming soon</div>
 const FilesPage     = () => <div>Files Page - Coming soon</div>
