@@ -3,28 +3,36 @@ import TextEditor from '@/components/tts/TextEditor'
 import VoiceSelector from '@/components/tts/VoiceSelector'
 import AudioPlayer from '@/components/tts/AudioPlayer'
 import GenerateButton from '@/components/tts/GenerateButton'
+import { generateAudio } from '@/services/ttsService'
 
 export default function GeneratorPage() {
   const [text, setText] = useState('')
   const [selectedVoice, setSelectedVoice] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [error, setError] = useState(null)
 
   const canGenerate = text.trim().length > 0 && selectedVoice !== null
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true)
     setAudioUrl(null)
+    setError(null)
 
-    // Temporaire : simulation d'appel backend
-    // On remplacera ça par un vrai appel API à l'Étape 7
-    console.log('Génération avec :', { text, voice: selectedVoice.name })
+    try {
+      const result = await generateAudio(text, selectedVoice.id)
 
-    setTimeout(() => {
-      // URL audio fictive pour tester le lecteur
-      setAudioUrl('https://www.w3schools.com/html/horse.mp3')
+      if (result.status === 'completed') {
+        setAudioUrl(result.audio_url)
+      } else {
+        setError(result.error || 'La génération a échoué.')
+      }
+    } catch (err) {
+      setError('Impossible de contacter le serveur. Vérifiez que le backend est lancé.')
+      console.error(err)
+    } finally {
       setIsGenerating(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -42,6 +50,13 @@ export default function GeneratorPage() {
         isGenerating={isGenerating}
         disabled={!canGenerate}
       />
+
+      {/* Message d'erreur */}
+      {error && (
+        <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+          {error}
+        </p>
+      )}
 
       {/* Lecteur audio (visible seulement si audioUrl existe) */}
       <AudioPlayer audioUrl={audioUrl} />
