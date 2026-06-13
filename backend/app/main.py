@@ -6,6 +6,8 @@ from app.database import tts_jobs_collection
 from app.services.tts_service import generate_audio
 from bson import ObjectId
 from datetime import datetime, timezone
+from app.services.storage_service import upload_to_s3
+import os
 
 app = FastAPI(title="TTS Project API")
 
@@ -38,23 +40,28 @@ async def create_job(job_data: TTSJobCreate):
     result = await tts_jobs_collection.insert_one(job.model_dump())
     job_id = result.inserted_id
 
-    # 2. Lancer la génération audio
     try:
+        # 2. Générer l'audio localement
         audio_path = generate_audio(job_data.text, job_data.voice_id)
 
-        # 3. Mettre à jour le job : succès
+        # 3. Uploader sur S3
+        audio_url = upload_to_s3(audio_path)
+
+        # 4. Supprimer le fichier local temporaire
+        os.remove(audio_path)
+
+        # 5. Mettre à jour le job : succès
         await tts_jobs_collection.update_one(
             {"_id": job_id},
             {"$set": {
                 "status": "completed",
-                "audio_url": audio_path,
+                "audio_url": audio_url,
                 "updated_at": datetime.now(timezone.utc)
             }}
         )
-        return {"job_id": str(job_id), "status": "completed", "audio_url": audio_path}
+        return {"job_id": str(job_id), "status": "completed", "audio_url": audio_url}
 
     except Exception as e:
-        # 3bis. Mettre à jour le job : échec
         await tts_jobs_collection.update_one(
             {"_id": job_id},
             {"$set": {
