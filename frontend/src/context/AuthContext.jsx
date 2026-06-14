@@ -10,7 +10,6 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
-  // Au démarrage : si un token existe dans localStorage, restaure la session
   useEffect(() => {
     const savedToken = localStorage.getItem('tts_token')
     const savedUser = localStorage.getItem('tts_user')
@@ -43,8 +42,15 @@ export function AuthProvider({ children }) {
     navigate('/login')
   }
 
+  // Nouvelle fonction : met à jour les crédits après une génération
+  const updateCredits = (newCredits) => {
+    const updatedUser = { ...user, credits: newCredits }
+    setUser(updatedUser)
+    localStorage.setItem('tts_user', JSON.stringify(updatedUser))
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, updateCredits, isLoading }}>
       {children}
     </AuthContext.Provider>
   )
