@@ -4,6 +4,8 @@ import VoiceSelector from '@/components/tts/VoiceSelector'
 import AudioPlayer from '@/components/tts/AudioPlayer'
 import GenerateButton from '@/components/tts/GenerateButton'
 import { generateAudio } from '@/services/ttsService'
+import { useAuth } from '@/context/AuthContext'
+
 
 export default function GeneratorPage() {
   const [text, setText] = useState('')
@@ -11,6 +13,7 @@ export default function GeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const [error, setError] = useState(null)
+  const { token, user } = useAuth()
 
   const canGenerate = text.trim().length > 0 && selectedVoice !== null
 
@@ -20,7 +23,7 @@ export default function GeneratorPage() {
     setError(null)
 
     try {
-      const result = await generateAudio(text, selectedVoice.id)
+      const result = await generateAudio(text, selectedVoice.id, token, user.id)
 
       if (result.status === 'completed') {
         setAudioUrl(result.audio_url)

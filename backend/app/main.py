@@ -8,10 +8,12 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from app.services.storage_service import upload_to_s3
 from app.routes.auth import router as auth_router
+from app.routes.jobs import router as jobs_router
 import os
 
 app = FastAPI(title="TTS Project API")
 app.include_router(auth_router)
+app.include_router(jobs_router)
 
 # Autorise le frontend (localhost:3000) à appeler ce backend
 app.add_middleware(

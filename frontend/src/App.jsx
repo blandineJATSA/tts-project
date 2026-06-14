@@ -5,8 +5,9 @@ import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import GeneratorPage from '@/pages/app/GeneratorPage'
+import HistoryPage from '@/pages/app/HistoryPage'
 
-const HistoryPage  = () => <div>History Page - Coming soon</div>
+
 const VoicesPage   = () => <div>Voices Page - Coming soon</div>
 const FilesPage    = () => <div>Files Page - Coming soon</div>
 const SettingsPage = () => <div>Settings Page - Coming soon</div>
