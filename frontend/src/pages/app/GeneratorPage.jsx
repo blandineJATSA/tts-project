@@ -6,14 +6,13 @@ import GenerateButton from '@/components/tts/GenerateButton'
 import { generateAudio } from '@/services/ttsService'
 import { useAuth } from '@/context/AuthContext'
 
-
 export default function GeneratorPage() {
+  const { token, user, updateCredits } = useAuth()
   const [text, setText] = useState('')
   const [selectedVoice, setSelectedVoice] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const [error, setError] = useState(null)
-  const { token, user } = useAuth()
 
   const canGenerate = text.trim().length > 0 && selectedVoice !== null
 
@@ -27,6 +26,12 @@ export default function GeneratorPage() {
 
       if (result.status === 'completed') {
         setAudioUrl(result.audio_url)
+        // Mise à jour des crédits en temps réel dans le header
+        if (result.credits_remaining !== undefined) {
+          updateCredits(result.credits_remaining)
+        }
+      } else if (result.status === 'error') {
+        setError(result.message)
       } else {
         setError(result.error || 'La génération a échoué.')
       }
@@ -41,27 +46,35 @@ export default function GeneratorPage() {
   return (
     <div className="max-w-3xl flex flex-col gap-6">
 
-      {/* Zone de texte */}
-      <TextEditor text={text} onChange={setText} />
+      {/* Compteur de crédits disponibles */}
+      <div className="text-sm text-muted-foreground">
+        Coût estimé : <strong>{text.length}</strong> crédits
+        {' · '}
+        Solde : <strong>{user?.credits ?? 0}</strong> crédits
+      </div>
 
-      {/* Choix de la voix */}
+      <TextEditor text={text} onChange={setText} />
       <VoiceSelector selectedVoice={selectedVoice} onSelect={setSelectedVoice} />
 
-      {/* Bouton générer */}
       <GenerateButton
         onClick={handleGenerate}
         isGenerating={isGenerating}
-        disabled={!canGenerate}
+        disabled={!canGenerate || text.length > (user?.credits ?? 0)}
       />
 
-      {/* Message d'erreur */}
+      {/* Message si crédits insuffisants */}
+      {text.length > (user?.credits ?? 0) && (
+        <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+          Texte trop long — vous n'avez pas assez de crédits ({text.length} requis, {user?.credits ?? 0} disponibles).
+        </p>
+      )}
+
       {error && (
         <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
           {error}
         </p>
       )}
 
-      {/* Lecteur audio (visible seulement si audioUrl existe) */}
       <AudioPlayer audioUrl={audioUrl} />
 
     </div>

@@ -1,21 +1,19 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import database
-from app.models.tts_job import TTSJobCreate, TTSJob
-from app.database import tts_jobs_collection
-from app.services.tts_service import generate_audio
-from bson import ObjectId
 from datetime import datetime, timezone
+from bson import ObjectId
+
+from app.database import database, tts_jobs_collection, users_collection
+from app.models.tts_job import TTSJobCreate, TTSJob
+from app.services.tts_service import generate_audio
 from app.services.storage_service import upload_to_s3
+from app.services.dependencies import get_current_user
 from app.routes.auth import router as auth_router
 from app.routes.jobs import router as jobs_router
-import os
 
 app = FastAPI(title="TTS Project API")
-app.include_router(auth_router)
-app.include_router(jobs_router)
 
-# Autorise le frontend (localhost:3000) à appeler ce backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -24,20 +22,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+app.include_router(jobs_router)
+
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
 
 @app.get("/api/db-check")
 async def db_check():
     collections = await database.list_collection_names()
     return {"status": "connected", "collections": collections}
 
+
 @app.post("/api/tts/jobs")
-async def create_job(job_data: TTSJobCreate):
-    # 1. Créer le job avec status "pending"
+async def create_job(
+    job_data: TTSJobCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    # 1. Calculer le coût en crédits
+    credits_cost = len(job_data.text)
+
+    # 2. Vérifier que l'user a assez de crédits
+    user = await users_collection.find_one({"_id": ObjectId(current_user["id"])})
+    current_credits = user.get("credits", 0)
+
+    if current_credits < credits_cost:
+        return {
+            "status": "error",
+            "message": f"Crédits insuffisants. Coût : {credits_cost}, solde : {current_credits}"
+        }
+
+    # 3. Créer le job avec status "pending"
     job = TTSJob(
-        user_id=job_data.user_id,
+        user_id=current_user["id"],
         text=job_data.text,
         voice_id=job_data.voice_id,
     )
@@ -45,16 +65,16 @@ async def create_job(job_data: TTSJobCreate):
     job_id = result.inserted_id
 
     try:
-        # 2. Générer l'audio localement
+        # 4. Générer l'audio
         audio_path = generate_audio(job_data.text, job_data.voice_id)
 
-        # 3. Uploader sur S3
+        # 5. Uploader sur S3
         audio_url = upload_to_s3(audio_path)
 
-        # 4. Supprimer le fichier local temporaire
+        # 6. Supprimer le fichier local
         os.remove(audio_path)
 
-        # 5. Mettre à jour le job : succès
+        # 7. Mettre à jour le job : succès
         await tts_jobs_collection.update_one(
             {"_id": job_id},
             {"$set": {
@@ -63,7 +83,24 @@ async def create_job(job_data: TTSJobCreate):
                 "updated_at": datetime.now(timezone.utc)
             }}
         )
-        return {"job_id": str(job_id), "status": "completed", "audio_url": audio_url}
+
+        # 8. Déduire les crédits de l'utilisateur
+        new_credits = current_credits - credits_cost
+        await users_collection.update_one(
+            {"_id": ObjectId(current_user["id"])},
+            {"$set": {
+                "credits": new_credits,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+
+        return {
+            "job_id": str(job_id),
+            "status": "completed",
+            "audio_url": audio_url,
+            "credits_used": credits_cost,
+            "credits_remaining": new_credits
+        }
 
     except Exception as e:
         await tts_jobs_collection.update_one(
