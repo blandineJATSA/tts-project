@@ -6,12 +6,12 @@ import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import GeneratorPage from '@/pages/app/GeneratorPage'
 import HistoryPage from '@/pages/app/HistoryPage'
+import DataLabPage from '@/pages/app/DataLabPage'
 
 
 const VoicesPage   = () => <div>Voices Page - Coming soon</div>
 const FilesPage    = () => <div>Files Page - Coming soon</div>
 const SettingsPage = () => <div>Settings Page - Coming soon</div>
-const DataLabPage  = () => <div>Data Lab Page - Coming soon</div>
 
 export default function App() {
   return (

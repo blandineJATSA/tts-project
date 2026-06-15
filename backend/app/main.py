@@ -11,6 +11,8 @@ from app.services.storage_service import upload_to_s3
 from app.services.dependencies import get_current_user
 from app.routes.auth import router as auth_router
 from app.routes.jobs import router as jobs_router
+from app.routes.analytics import router as analytics_router
+from app.services.event_service import track_event
 
 app = FastAPI(title="TTS Project API")
 
@@ -24,6 +26,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(jobs_router)
+app.include_router(analytics_router)
 
 
 @app.get("/api/health")
@@ -70,6 +73,12 @@ async def create_job(
 
         # 5. Uploader sur S3
         audio_url = upload_to_s3(audio_path)
+
+        await track_event("audio_generated", current_user["id"], {
+            "voice_id": job_data.voice_id,
+            "chars": len(job_data.text),
+            "credits_used": credits_cost
+            })
 
         # 6. Supprimer le fichier local
         os.remove(audio_path)

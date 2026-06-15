@@ -3,8 +3,10 @@ from app.models.user import UserCreate, UserLogin, UserResponse
 from app.services.auth_service import hash_password, verify_password, create_jwt_token
 from app.database import users_collection
 from app.services.dependencies import get_current_user
+from app.services.event_service import track_event
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -37,6 +39,7 @@ async def register(user_data: UserCreate):
     )
 
     result = await users_collection.insert_one(new_user.model_dump())
+    await track_event("user_signed_up", str(result.inserted_id), {"email": user_data.email})
 
     # 4. Répondre sans renvoyer le mot de passe
     return {"message": "Compte créé avec succès.", "user_id": str(result.inserted_id)}
@@ -72,6 +75,8 @@ async def login(user_data: UserLogin):
         user_id=str(user["_id"]),
         email=user["email"]
     )
+
+    await track_event("user_logged_in", str(user["_id"]), {"email": user_data.email})
 
     # 4. Renvoyer le token + infos utilisateur (sans mot de passe)
     return {
