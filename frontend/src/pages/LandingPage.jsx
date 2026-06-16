@@ -115,7 +115,7 @@ export default function LandingPage() {
           Prêt à démarrer ?
         </h2>
         <p className="text-muted-foreground mb-8">
-          10 000 caractères gratuits par mois. Sans carte bancaire.
+          1 000 caractères gratuits à l'inscription. Sans carte bancaire.
         </p>
 
         <Link to="/register">
